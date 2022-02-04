@@ -7,6 +7,10 @@ import sys
 
 from unrest.image.list_colors import list_colors
 
+def show(image, name="unnamed"):
+    cv2.imshow(name, image)
+    cv2.waitKey(0)
+
 def reduce_colors(image, color_ranges):
     result = None
     for r in color_ranges:
@@ -15,7 +19,18 @@ def reduce_colors(image, color_ranges):
             result = result | reduced
         else:
             result = reduced
-    return result
+    return cv2.bitwise_and(image, image, mask=result)
+
+
+def reduce_noise(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('reduced noise gray', gray)
+    t, mask = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
+    cv2.imshow('reduced noise mask', mask)
+    out = cv2.bitwise_and(image, image, mask=mask)
+    cv2.imshow('reduced noise', out)
+    return out
+
 
 def quantize_image(image, n_clusters=16):
     (h, w) = image.shape[:2]
@@ -34,24 +49,51 @@ def quantize_image(image, n_clusters=16):
     return cv2.cvtColor(quant, cv2.COLOR_LAB2BGR)
 
 
-def main(video, image):
-    video = cv2.VideoCapture(video)
-    colors = list_colors(image)
+def get_track(frame):
+    s = 10
+    x, y, w, h = cv2.selectROI(frame,False)
+    track = frame[y:y+h,x:x+w]
+    track = reduce_noise(track)
+    track = cv2.medianBlur(track, 3)
+    cv2.imshow('median track', track)
+    track = quantize_image(track, 16)
+    cv2.imshow('quantized track', track)
+    colors = list_colors(track)
     color_ranges = [
-        [np.array([max(0, c - 20) for c in color]), np.array([min(255, c+20) for c in color])]
+        [np.array([max(0, c - s) for c in color]), np.array([min(255, c + s) for c in color])]
         for color, _count in colors
     ]
+    print(f'using {len(color_ranges)} ranges')
+    print(color_ranges)
+    return color_ranges
+
+
+def main(video, track=None):
+    video = cv2.VideoCapture(video)
+    color_ranges = None
+    if track:
+        colors = list_colors(track)
+        color_ranges = [
+            [np.array([max(0, c - 2) for c in color]), np.array([min(255, c + 2) for c in color])]
+            for color, _count in colors
+        ]
     while True:
+        key = cv2.waitKey(1) & 0xff
+        if key == ord(' '):
+            key = cv2.waitKey(0)
+        if key == ord('t'):
+            color_ranges = None
+        elif key == ord('q'):
+            break
+        elif key != 0xff:
+            print(key)
         _, frame = video.read()
         frame = imutils.resize(frame,width=720)
-        # reduced = reduce_colors(frame, color_ranges)
-        # cv2.imshow('reduced', reduced)
-        quant = quantize_image(frame)
-        cv2.imshow('Quant', np.hstack([frame, quant]))
+        if color_ranges is None:
+            color_ranges = get_track(frame)
+        reduced = reduce_colors(frame, color_ranges)
+        cv2.imshow('Quant', np.hstack([frame, reduced]))
 
-        key = cv2.waitKey(1) & 0xff
-        if key == ord('q'):
-            break
 
 
 if __name__ == "__main__":
