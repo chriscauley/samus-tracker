@@ -1,0 +1,5 @@
+imutils==0.5.4
+opencv_python==4.5.5.62
+pillow==9.0.1
+scikit-learn==1.0.2
+
