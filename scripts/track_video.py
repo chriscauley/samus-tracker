@@ -49,10 +49,8 @@ def quantize_image(image, n_clusters=16):
     return cv2.cvtColor(quant, cv2.COLOR_LAB2BGR)
 
 
-def get_track(frame):
+def get_track(track):
     s = 10
-    x, y, w, h = cv2.selectROI(frame,False)
-    track = frame[y:y+h,x:x+w]
     track = reduce_noise(track)
     track = cv2.medianBlur(track, 3)
     cv2.imshow('median track', track)
@@ -68,15 +66,13 @@ def get_track(frame):
     return color_ranges
 
 
-def main(video, track=None):
+def main(video):
+    LAST_TRACK = '.cache/_last-track.png'
     video = cv2.VideoCapture(video)
     color_ranges = None
-    if track:
-        colors = list_colors(track)
-        color_ranges = [
-            [np.array([max(0, c - 2) for c in color]), np.array([min(255, c + 2) for c in color])]
-            for color, _count in colors
-        ]
+    if os.path.exists(LAST_TRACK):
+        track = cv2.imread(LAST_TRACK)
+        color_ranges = get_track(track)
     while True:
         key = cv2.waitKey(1) & 0xff
         if key == ord(' '):
@@ -88,13 +84,16 @@ def main(video, track=None):
         elif key != 0xff:
             print(key)
         _, frame = video.read()
-        frame = imutils.resize(frame,width=720)
+        # frame = imutils.resize(frame,width=720)
         if color_ranges is None:
-            color_ranges = get_track(frame)
+            x, y, w, h = cv2.selectROI(frame,False)
+            track = frame[y:y+h,x:x+w]
+            cv2.imwrite(LAST_TRACK, track)
+            color_ranges = get_track(track)
         reduced = reduce_colors(frame, color_ranges)
         cv2.imshow('Quant', np.hstack([frame, reduced]))
 
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1])
