@@ -1,7 +1,6 @@
-import color_ranges
 import cv2
 import numpy as np
-from cccv import scale
+import urcv
 
 
 def stack_many(images, text=None, border=False):
@@ -27,24 +26,15 @@ def stack_many(images, text=None, border=False):
     return result
 
 
-def crop_ratio(image, bounds):
-    ih, iw = image.shape[:2]
-    x, y, w, h = bounds
-    x = int(x * iw)
-    w = int(w * iw)
-    y = int(y * ih)
-    h = int(h * ih)
-    return image[y:y+h,x:x+w]
-
 if __name__ == "__main__":
     import sys
     image = sys.argv[1]
     # images = split_channels(scale(cv2.imread(image), 0.5))
-    image = scale(cv2.imread(image), 0.75)
-    image = crop_ratio(image, (0.2, 0, 0.5, 0.85))
+    image = urcv.transform.scale(cv2.imread(image), 0.75)
+    image = urcv.transform.crop_ratio(image, (0.2, 0, 0.5, 0.85))
     cv2.imshow('og', image)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    images, ranges = color_ranges.scan_hue(hsv, 24, saturation=[0, 255], value=[0,255])
+    images, ranges = urcv.hsv.scan_hue(hsv, 24, saturation=[0, 255], value=[0,255])
 
     result = stack_many(images, border=[255, 0, 255], text=[str(r) for r in ranges])
     result = cv2.cvtColor(result, cv2.COLOR_HSV2BGR)
