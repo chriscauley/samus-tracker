@@ -44,10 +44,14 @@ def isolate_name(frame_name):
 
 
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    bounds = get_bounds_for_contours(contours)
+    (x, y, w, h) = get_bounds_for_contours(contours)
+    if x > 60:
+        x -= 60
+        w += 60
+
+    final = urcv.transform.crop(gray, (x,y,w,h))
 
     # useful for debugging
-    # (x, y, w, h) = bounds
     # frame_name = cv2.rectangle(frame_name, (x, y), (x+w, y+h), (255,0,0), 1)
     # cv2.imshow('frame_name', urcv.transform.scale(frame_name, 2))
     # cv2.imshow('red_name', urcv.transform.scale(red_name, 2))
@@ -55,10 +59,12 @@ def isolate_name(frame_name):
     # cv2.imshow('erode', urcv.transform.scale(erode, 2))
     # cv2.imshow('thresh', urcv.transform.scale(thresh, 2))
     # cv2.imshow('dilate', urcv.transform.scale(dilate, 2))
-    # cv2.waitKey(0)
-    # exit()
+    # cv2.imshow('final', urcv.transform.scale(final, 2))
+    # key = urcv.wait_key()
+    # if key == 'q':
+    #     exit()
 
-    return urcv.transform.crop(gray, bounds)
+    return final
 
 def _load(video_id, frame_number, item_name):
     key = _key(video_id, frame_number, item_name)
@@ -79,7 +85,7 @@ def create(video_id, frame_number, item_name, content):
     key = _key(video_id, frame_number, item_name)
     if not key in _templates:
         path = DIR / f'{key}.png'
-        print('saving {path}')
+        print(f'saving {path}')
         cv2.imwrite(str(path), content)
         _load(video_id, frame_number, item_name)
 
