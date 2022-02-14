@@ -11,8 +11,7 @@ def main(youtube_id):
     _i = 0
     for frame_number in video.data['item_frames']:
         assigned_name = video.get_item_name(frame_number)
-        if assigned_name and not Template.exists(youtube_id, frame_number, assigned_name):
-            print('regenerating template for', frame_number)
+        if assigned_name:
             frame_name = video.get_item_content(frame_number)
             Template.create(youtube_id, frame_number, assigned_name, frame_name)
     while True:
@@ -32,9 +31,9 @@ def main(youtube_id):
         cv2.waitKey(100)
         pressed = input("What do?")
         if len(pressed) > 1:
+            pressed = pressed.lower().replace(" ", "-")
             video.set_item_name(frame_number, pressed)
             print(f"Set frame {frame_number} to {video.get_item_name(frame_number)}")
-            _i += 1
             Template.create(youtube_id, frame_number, pressed, frame_name)
         elif pressed == 'q':
             break

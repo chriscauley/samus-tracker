@@ -9,8 +9,14 @@ DIR.mkdir(exist_ok=True)
 
 _templates = {}
 
-ONES = np.ones((3, 3), dtype=np.uint8)
-
+ONES = np.ones((5, 5), dtype=np.uint8)
+# ONES = np.array([
+#     [0.5,0.5,0.5,0.5,0.5],
+#     [0.5,1,1,1,0.5],
+#     [0.5,1,1,1,0.5],
+#     [0.5,1,1,1,0.5],
+#     [0.5,0.5,0.5,0.5,0.5],
+# ], dtype=np.uint8)
 def init():
     for f in DIR.iterdir():
         _load(*f.stem.split("__"))
@@ -38,10 +44,9 @@ def isolate_name(frame_name):
     # threshold, erode and dilate
     gray = cv2.cvtColor(red_name, cv2.COLOR_BGR2GRAY)
     erode = cv2.erode(gray, ONES, iterations=1)
-    _, mask = cv2.threshold(erode, 127, 255, cv2.THRESH_BINARY_INV)
+    _, mask = cv2.threshold(erode, 200, 255, cv2.THRESH_BINARY_INV)
     thresh = cv2.bitwise_and(erode, erode, mask=mask)
     dilate = cv2.dilate(thresh, ONES, iterations=1)
-
 
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     (x, y, w, h) = get_bounds_for_contours(contours)
@@ -52,19 +57,18 @@ def isolate_name(frame_name):
     final = urcv.transform.crop(gray, (x,y,w,h))
 
     # useful for debugging
-    # frame_name = cv2.rectangle(frame_name, (x, y), (x+w, y+h), (255,0,0), 1)
-    # cv2.imshow('frame_name', urcv.transform.scale(frame_name, 2))
-    # cv2.imshow('red_name', urcv.transform.scale(red_name, 2))
-    # cv2.imshow('gray', urcv.transform.scale(gray, 2))
-    # cv2.imshow('erode', urcv.transform.scale(erode, 2))
-    # cv2.imshow('thresh', urcv.transform.scale(thresh, 2))
-    # cv2.imshow('dilate', urcv.transform.scale(dilate, 2))
-    # cv2.imshow('final', urcv.transform.scale(final, 2))
-    # key = urcv.wait_key()
-    # if key == 'q':
-    #     exit()
+    frame_name = cv2.rectangle(frame_name, (x, y), (x+w, y+h), (255,0,0), 1)
+    colors = urcv.stack.many([frame_name, red_name], text=['frame_name', 'red_name'])
+    grays = 4*urcv.stack.many_grays([gray, erode, thresh, dilate], text=['gray', 'erode', 'thresh', 'dilate'])
+    cv2.imshow('colors', urcv.transform.scale(colors, 2))
+    cv2.imshow('grays', urcv.transform.scale(grays, 2))
+    cv2.imshow('final', urcv.transform.scale(final, 2))
+    key = urcv.wait_key()
+    if key == 'q':
+        exit()
 
     return final
+
 
 def _load(video_id, frame_number, item_name):
     key = _key(video_id, frame_number, item_name)
