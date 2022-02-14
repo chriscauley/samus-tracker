@@ -1,7 +1,22 @@
 import cv2
+import numpy as np
 from pathlib import Path
 from unrest.utils import JsonCache
 import urcv
+
+BUTTONS = [
+    'left',
+    'right',
+    'up',
+    'down',
+    'a',
+    'b',
+    'x',
+    'y',
+    'r',
+    'l',
+]
+
 
 class Video():
     def __init__(self, external_id):
@@ -20,6 +35,7 @@ class Video():
         self.config = JsonCache(str(self.video_dir / 'config.json'), {
             'external_id': 'Syygh_qwaTU',
             'i_frame': 0,
+            'bounds': {},
         })
         self.data = JsonCache(str(self.video_dir / 'data.json'), {
             'item_frames': [],
@@ -57,3 +73,18 @@ class Video():
             raise ValueError(e)
         frame = self.get_game_content(frame_number)
         return urcv.transform.crop(frame, self.config['item_bounds'])
+
+    def get_buttons_pressed(self, frame_number):
+        pressed = []
+        frame = self.get_game_content(frame_number)
+        for button, bounds in self.config['bounds'].items():
+            if not button in BUTTONS:
+                continue
+            x, y, w, h = bounds
+            image = urcv.transform.crop(frame,bounds)
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            thresh = urcv.transform.threshold(image)
+            if np.sum(thresh) / thresh.size > 0.2:
+                # print(button, np.sum(thresh), thresh.size)
+                pressed.append(button)
+        return pressed
