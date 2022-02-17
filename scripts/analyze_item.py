@@ -2,18 +2,18 @@ import cv2
 import sys
 import urcv
 
+from setup import get_video_from_argv
 import Template
 from Video import Video
 
-def main(youtube_id):
+def main(video):
     Template.init()
-    video = Video(youtube_id)
     _i = 0
     for frame_number in video.data['item_frames']:
         assigned_name = video.get_item_name(frame_number)
         if assigned_name:
-            frame_name = video.get_item_content(frame_number)
-            Template.create(youtube_id, frame_number, assigned_name, frame_name)
+            # opens a prompt if template is missing
+            video.get_item_template(frame_number)
     while True:
         _i = _i % len(video.data['item_frames'])
         frame_number = video.data['item_frames'][_i]
@@ -47,4 +47,4 @@ def main(youtube_id):
             _i -= 1
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(get_video_from_argv())

@@ -1,3 +1,4 @@
+from setup import get_video_from_argv
 import cv2
 import numpy as np
 import sys
@@ -7,8 +8,7 @@ from unrest.utils import JsonCache
 import urcv
 
 
-def main(youtube_id):
-    video = Video(youtube_id)
+def main(video):
     current_title = None
     _i = 0
     while True:
@@ -68,4 +68,4 @@ def main(youtube_id):
         else:
             print('unknown key', repr(key))
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(get_video_from_argv())

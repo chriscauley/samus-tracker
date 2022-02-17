@@ -39,7 +39,8 @@ class Video():
         })
         self.data = JsonCache(str(self.video_dir / 'data.json'), {
             'item_frames': [],
-            'names_by_frame': {}
+            'names_by_frame': {},
+            'coords_by_frame': {},
         })
         if not 'fps' in self.config:
             self.config['fps'] = int(input('What is the fps?'))
@@ -88,3 +89,15 @@ class Video():
                 # print(button, np.sum(thresh), thresh.size)
                 pressed.append(button)
         return pressed
+
+    def get_item_template(self, frame_number):
+        item_name = self.data['names_by_frame'][str(frame_number)]
+        key = f'{self.external_id}__{frame_number}__{item_name}'
+        path = f'.cache/templates/{key}.png'
+        if not str(frame_number) in self.data['coords_by_frame']:
+            item_content = self.get_item_content(frame_number)
+            bounds = urcv.input.get_scaled_roi(item_content, 3)
+            cv2.imwrite(path, urcv.transform.crop(item_content, bounds))
+            self.data['coords_by_frame'][str(frame_number)] = bounds
+            self.data._save()
+        return cv2.imread(path)

@@ -35,46 +35,10 @@ def get_bounds_for_contours(contours):
     return (left, top, right - left, bottom - top)
 
 
-def isolate_name(frame_name):
-    # isolate red channel
-    hsv_name = cv2.cvtColor(frame_name, cv2.COLOR_BGR2HSV)
-    red_hsv_name = urcv.hsv.filter(hsv_name, hue=[161, 172])
-    red_name = cv2.cvtColor(red_hsv_name, cv2.COLOR_HSV2BGR)
-
-    # threshold, erode and dilate
-    gray = cv2.cvtColor(red_name, cv2.COLOR_BGR2GRAY)
-    erode = cv2.erode(gray, ONES, iterations=1)
-    _, mask = cv2.threshold(erode, 200, 255, cv2.THRESH_BINARY_INV)
-    thresh = cv2.bitwise_and(erode, erode, mask=mask)
-    dilate = cv2.dilate(thresh, ONES, iterations=1)
-
-    contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    (x, y, w, h) = get_bounds_for_contours(contours)
-    if x > 60:
-        x -= 60
-        w += 60
-
-    final = urcv.transform.crop(gray, (x,y,w,h))
-
-    # useful for debugging
-    frame_name = cv2.rectangle(frame_name, (x, y), (x+w, y+h), (255,0,0), 1)
-    colors = urcv.stack.many([frame_name, red_name], text=['frame_name', 'red_name'])
-    grays = 4*urcv.stack.many_grays([gray, erode, thresh, dilate], text=['gray', 'erode', 'thresh', 'dilate'])
-    cv2.imshow('colors', urcv.transform.scale(colors, 2))
-    cv2.imshow('grays', urcv.transform.scale(grays, 2))
-    cv2.imshow('final', urcv.transform.scale(final, 2))
-    key = urcv.wait_key()
-    if key == 'q':
-        exit()
-
-    return final
-
-
 def _load(video_id, frame_number, item_name):
     key = _key(video_id, frame_number, item_name)
     path = DIR / f'{key}.png'
-    frame_name = cv2.imread(str(path))
-    _templates[key] = isolate_name(frame_name)
+    _templates[key] = cv2.cvtColor(cv2.imread(str(path)), cv2.COLOR_BGR2GRAY)
 
 
 def _key(video_id, frame_number, item_name):
