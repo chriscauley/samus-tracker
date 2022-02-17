@@ -9,12 +9,12 @@ BUTTONS = [
     'right',
     'up',
     'down',
-    'a',
-    'b',
-    'x',
-    'y',
-    'r',
-    'l',
+    'dash', # a
+    'jump', # b
+    'item-select', # x
+    'shot', # y
+    'aim-up', # r
+    'aim-down', # l
 ]
 
 
