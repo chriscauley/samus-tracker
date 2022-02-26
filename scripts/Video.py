@@ -22,6 +22,7 @@ class Video():
     def __init__(self, external_id):
         self._current_frame_number = None
         self._current_frame = None
+        self._i = 0
         self.external_id = external_id
         self.video_dir = Path(f'.cache/youtube/{external_id}')
         if not (self.video_dir / f'{external_id}.mp4').exists():
@@ -101,3 +102,20 @@ class Video():
             self.data['coords_by_frame'][str(frame_number)] = bounds
             self.data._save()
         return cv2.imread(path)
+
+    def wait_key(self):
+        key = urcv.wait_key()
+        if key == 'q':
+            self._i = self.frames.length + 1
+        elif key == 'f':
+            self._i += 1
+        elif key == 'b':
+            self._i -= 1
+        elif key == 'n':
+            self._i += 5
+        elif key == 'p':
+            self._i -= 5
+        elif key == '0':
+            self._i = 0
+        else:
+            return key
