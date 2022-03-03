@@ -1,6 +1,8 @@
 from pathlib import Path
 from Video import Video
 import sys
+sys.path.append('.')
+
 
 def get_video_id_from_argv():
     if len(sys.argv) > 1:
