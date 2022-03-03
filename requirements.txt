@@ -1,5 +1,7 @@
 imutils==0.5.4
+mss==6.1.0
 opencv_python==4.5.5.62
 pillow==9.0.1
-scikit-learn==1.0.2
 pytesseract==0.3.8
+scikit-image==0.19.2
+scikit-learn==1.0.2

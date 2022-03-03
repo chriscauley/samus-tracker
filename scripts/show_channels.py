@@ -7,8 +7,8 @@ if __name__ == "__main__":
     import sys
     image = sys.argv[1]
     image = cv2.imread(image)
-    image = urcv.transform.scale(image, 0.75)
-    image = urcv.transform.crop_ratio(image, (0.2, 0.25, 0.5, 0.5))
+    # image = urcv.transform.scale(image, 0.75)
+    # image = urcv.transform.crop_ratio(image, (0.2, 0.25, 0.5, 0.5))
     cv2.imshow('og', urcv.transform.scale(image, 4))
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     images, ranges = urcv.hsv.scan_hue(hsv, 48, saturation=[0, 255], value=[0,255])
