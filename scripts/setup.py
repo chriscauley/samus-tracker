@@ -1,8 +1,9 @@
 from pathlib import Path
 from Video import Video
 import sys
-sys.path.append('.')
 
+sys.path.append('.')
+sys.path.append('../maptroid/server/')
 
 def get_video_id_from_argv():
     if len(sys.argv) > 1:

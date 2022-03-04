@@ -3,17 +3,21 @@ import numpy as np
 from pathlib import Path
 import urcv
 
+def noop(a, *args, **kwargs):
+    return a
+
 class Template:
-    def __init__(self, world ):
+    def __init__(self, world, processes={}):
         self.dirs = { 'root': Path('.cache/templates/'+world) }
         self.scale_ratio = 1
         self._raw = {}
-        self._scaled = {}
-        for category in ['item']:
-            self.dirs[category] = self.dirs['root'] / 'item'
+        self._template = {}
+        self.processes = processes
+        for category in ['item', 'zone', 'ui']:
+            self.dirs[category] = self.dirs['root'] / category
             self.dirs[category].mkdir(exist_ok=True, parents=True)
             self._raw[category] = {}
-            self._scaled[category] = {}
+            self._template[category] = {}
             for fname in self.dirs[category].iterdir():
                 template_name = str(fname).split('/')[-1].split('.')[0]
                 self._reload(category, template_name)
@@ -30,11 +34,16 @@ class Template:
         cv2.imwrite(str(path), image)
         self._reload(category, name)
 
-    def search(self, image, category, names=[]):
+    def search(self, image, category, names=[], show=False):
         names = names or self._raw[category].keys()
         for name in names:
-            template = self._scaled[category][name]
-            coords = urcv.template.match(image, template, threshold=0.9)
+            func = self.processes.get(category, {}).get(name) or noop
+            target = func(image)
+            template = self._template[category][name]
+            coords = urcv.template.match(target, template, threshold=0.9)
+            if show:
+                cv2.imshow(name, template)
+                cv2.imshow(name +" target", target)
             if coords:
                 return name, coords
         return None, []
@@ -47,17 +56,29 @@ class Template:
 
     def _scale(self, category, name):
         if self.scale_ratio == 1:
-            self._scaled[category][name] = self._raw[category][name]
+            self._template[category][name] = self._raw[category][name]
         else:
-            self._scaled[category][name] = urcv.transform.scale(
+            self._template[category][name] = urcv.transform.scale(
                 self._raw[category][name],
                 self.scale_ratio,
                 interpolation=cv2.INTER_LINEAR,
             )
+        self._process(category, name)
 
-    def save_from_frame(self, frame):
+    def _process(self, category, name):
+        func = self.processes.get(category, {}).get(name)
+        if func:
+            self._template[category][name] = func(self._template[category][name])
+
+    def save_from_frame(self, category, frame):
         h, w = frame.shape[:2]
         scale = 2 if w < 600 else 1
         x, y, w, h = urcv.input.get_scaled_roi(frame, scale)
         name = input("what is this? ")
-        self.save('item', name, frame[y:y+h,x:x+w])
+        self.save(category, name, frame[y:y+h,x:x+w])
+
+    def show_all(self, category):
+        for name, image in self._raw[category].items():
+            _processed = self._template[category][name]
+            cv2.imshow(name, image)
+            cv2.imshow(name+' processed', _processed)
