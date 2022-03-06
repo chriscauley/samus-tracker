@@ -5,10 +5,14 @@ import numpy as np
 from pathlib import Path
 import urcv
 
+from .mixins import WaitKeyMixin
 from maptroid.icons import get_icons
 
-class Playthrough:
+
+class Playthrough(WaitKeyMixin):
     def __init__(self, id):
+        super().__init__()
+        self._index = 1
         self.icons = get_icons('items')
         self.gray_icons = get_icons('items', _cvt=cv2.COLOR_BGR2GRAY)
         self.data = {
@@ -27,6 +31,9 @@ class Playthrough:
         if self._data_json.exists():
             self.data = json.loads(self._data_json.read_text())
         self.frame_count = len(list(self.frames_path.glob("*.png")))
+
+    def get_max_index(self):
+        return self.frame_count
 
     def touch(self, item_name):
         if item_name and self._current != item_name:
@@ -50,9 +57,11 @@ class Playthrough:
         _id = len(self.data['item_names']) - 1
         return _id in self.data['item_duplicates']
 
-    def save_frame(self, image):
-        self.frame_count += 1
-        cv2.imwrite(str(self.path / f'frames/{self.frame_count}.png'), image)
+    def save_frame(self, image, frame_no=None):
+        if frame_no is None:
+            self.frame_count += 1
+            frame_no = self.frame_count
+        cv2.imwrite(str(self.path / f'frames/{frame_no}.png'), image)
 
     def get_frame(self, frame_id):
         return cv2.imread(f'{self.frames_path}/{frame_id}.png')
@@ -100,3 +109,12 @@ class Playthrough:
             )
 
         return image
+
+    def get_stats(self, extra={}):
+        return {
+            # 'fps': round(len(frames) / (time.time() - frame_times[0]), 2),
+            'last': self.last,
+            'saved_frames': self.frame_count,
+            'duplicated': self.is_last_duplicate(),
+            **extra
+        }

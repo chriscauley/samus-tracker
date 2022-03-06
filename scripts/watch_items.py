@@ -11,7 +11,7 @@ import time
 import urcv
 import sys
 
-from models import Playthrough, Template
+from models import Playthrough, Template, MotionDetector
 from unrest.utils import time_it
 
 # define dimensions of screen w.r.t to given monitor to be captured
@@ -36,21 +36,7 @@ for i, arg in enumerate(sys.argv):
         _template = sys.argv[i+1]
 print('using template', _template)
 
-class MotionDetector:
-    def __init__(self):
-        self._last = None
-    def check(self, image):
-        image = urcv.transform.scale(image, 1/16)
-        total = 0
-
-        if self._last is not None:
-            diff = cv2.subtract(image, self._last)
-            b, g, r = [int(np.sum(c) / c.size) for c in cv2.split(diff)]
-            total = b + g + r
-        self._last = image
-        return total
-
-def imshow_dict(data):
+def render_dict(data):
     img = np.zeros((400, 500), dtype=np.uint8)
     y = 0
     for i, (key, value) in enumerate(sorted(list(stats.items()))):
@@ -92,8 +78,12 @@ with mss() as sct:
     trex = MotionDetector()
 
     # @time_it
-    def search(template, gray_mini):
+    def search_item(template, gray_mini):
         return template.search(gray_mini, 'item')
+
+    def search_zone(template, gray_mini):
+        cropped = doot
+        return template.search(cropped, 'zone')
     while True:
         now = time.time()
 
@@ -112,34 +102,30 @@ with mss() as sct:
         gray_mini = cv2.cvtColor(mini, cv2.COLOR_RGB2GRAY)
         why_stopped = detect_stopped(capture, gray_frame)
         is_focused = not why_stopped
+        if is_focused:
+            playthrough.save_frame(mini)
 
         frames.append(time.time())
         frames = [f for f in frames if f > time.time() - 5]
 
-        motion = trex.check(frame)
+        motion = trex.check(frame)[-1]
         if motion < 10 and is_focused:
-            item_name, coords = search(template, gray_mini)
+            item_name, item_coords = search_item(template, gray_mini)
         else:
-            item_name, coords = None, []
+            item_name, item_coords = None, []
         playthrough.touch(item_name)
-        for x1, y1, x2, y2 in coords:
+        for x1, y1, x2, y2 in item_coords:
             cv2.rectangle(mini, [x1, y1], [x2, y2], (255,0,0), 3)
             urcv.text.write(mini, item_name)
 
         frame_times.append(time.time())
         frame_times = frame_times[-20:]
-        stats['fps'] = round(len(frames) / (time.time() - frame_times[0]), 2)
-        stats['last'] = playthrough.last
-        stats['frame'] += 1
-        stats['saved_frames'] = playthrough.frame_count
-        stats['duplicated'] = playthrough.is_last_duplicate()
-        stats['state'] = why_stopped or 'focused'
 
         if is_focused:
-            playthrough.save_frame(mini)
             cv2.imshow('mini', mini)
         cv2.imshow('inventory', playthrough.get_inventory_image())
-        cv2.imshow('stats', imshow_dict(stats))
+        stats = playthrough.get_stats({ 'state': why_stopped or 'focused' })
+        cv2.imshow('stats', render_dict(stats))
         # cv2.imshow('gray_mini', gray_mini)
         delay = max(60, int(capture_rate - (time.time() * 1000) % capture_rate))
         pressed = urcv.wait_key(max_time=1, delay=delay)
@@ -153,6 +139,8 @@ with mss() as sct:
             template.save_from_frame('zone', mini)
         elif pressed == 'u':
             template.save_from_frame('ui', mini)
+        elif pressed == 'b':
+            print('bounds is', get_scaled_roi(mini, 2))
         if not windows_set:
             x, y, w, h = cv2.getWindowImageRect('inventory')
             cv2.moveWindow('mini', 0, 0)
