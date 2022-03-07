@@ -11,14 +11,15 @@ from unrest.utils import time_it
 sums_hit = []
 sums_miss = []
 stop_at = None
-if '--stop-at' in sys.argv:
-    stop_at = int(sys.argv[sys.argv.index('--stop-at') + 1])
-print(stop_at)
-
 playthrough = Playthrough(sys.argv[1])
-playthrough.freeze()
-if stop_at:
+if '--stop-at' in sys.argv:
+    stop_at = sys.argv[sys.argv.index('--stop-at') + 1]
+    if stop_at == 'end':
+        stop_at = playthrough.get_max_index()-1
+    stop_at = int(stop_at)
     playthrough.increase_goto_by(stop_at)
+
+playthrough.freeze()
 template = Template(playthrough.data['world'])
 trex = MotionDetector()
 
@@ -43,6 +44,8 @@ while True:
     if stop_at and playthrough._index == stop_at:
         break
     frame = playthrough.get_frame(playthrough._index)
+    if frame is None:
+        raise ValueError("missing frame:", playthrough._index)
     copy = frame.copy()
     gray_mini = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -74,8 +77,7 @@ while True:
         urcv.text.write(copy, playthrough._index, pos=(w, h), align="bottom right")
         urcv.text.write(copy, item_sum, pos=(0, h), align="bottom")
         cv2.imshow('copy', copy)
-        if not playthrough.does_frozen_match_live():
-            playthrough.goto = None
+        playthrough.does_frozen_match_live()
 
     pressed = playthrough.wait_key()
     if pressed == 'b':
@@ -91,6 +93,12 @@ while True:
         ax2.hist(sums_miss, range=(0, 1e2))
         fig.show()
         input('review plot and press enter')
+    elif pressed == 's':
+        print('unfreezing and saving', end=" ")
+        playthrough.frozen = False
+        playthrough.save()
+        print('...done')
+        exit()
     elif pressed == 'i':
         template.save_from_frame('item', frame)
     elif pressed == 'q':

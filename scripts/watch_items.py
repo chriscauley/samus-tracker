@@ -110,7 +110,8 @@ with mss() as sct:
             item_name, item_coords = search_item(template, gray_mini)
         else:
             item_name, item_coords = None, []
-        playthrough.touch(item_name)
+        if not why_stopped:
+            playthrough.touch(item_name)
         for x1, y1, x2, y2 in item_coords:
             cv2.rectangle(mini, [x1, y1], [x2, y2], (255,0,0), 3)
             urcv.text.write(mini, item_name)

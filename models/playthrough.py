@@ -51,13 +51,15 @@ class Playthrough(WaitKeyMixin):
     def touch(self, item_name):
         if item_name and self._current != item_name:
             self.data['item_names'].append(item_name)
-            self.data['item_frames'].append(self._index)
+            self.data['item_frames'].append(int(self._index))
             self.last = item_name
             self.save()
         self._current = item_name
 
     def save(self):
         if not self.frozen:
+            # for some reason this is sometimes a uint64 which is not serializeable
+            self.data['item_frames'] = [int(i) for i in self.data['item_frames']]
             self._data_json.write_text(json.dumps(self.data))
 
     def mark_duplicate(self, _id=None):
@@ -146,6 +148,7 @@ class Playthrough(WaitKeyMixin):
             if live_item != frozen[i]:
                 print(f'Item mismatch {live_item} != {frozen[i]} @{i}')
                 print('Items in live', live)
+                print('mismatch frame number:', self.data['item_frames'][i])
                 return
         print(f'frozen and live match up to {len(live)}/{len(frozen)}')
         return True
@@ -155,6 +158,7 @@ class Playthrough(WaitKeyMixin):
         boundses = [
             [114, 225, 32, 28],
             [431, 223, 32, 42],
+            [189, 251, 244, 14],
         ]
         item_sum = 0
         for x, y, w, h in boundses:
