@@ -10,16 +10,17 @@ from maptroid.icons import get_icons
 
 
 class Playthrough(WaitKeyMixin):
-    def __init__(self, id):
+    def __init__(self, id, world=None):
         super().__init__()
-        self._index = 1
         self.icons = get_icons('items')
         self.gray_icons = get_icons('items', _cvt=cv2.COLOR_BGR2GRAY)
+        self.frozen = False
         self.data = {
             'item_names': [],
             'item_frames': [],
             'item_duplicates': [],
             'fps': 4,
+            'world': world,
         }
         self.last = self._current = None
         self.id = id
@@ -30,23 +31,37 @@ class Playthrough(WaitKeyMixin):
         self._data_json = self.path / 'data.json'
         if self._data_json.exists():
             self.data = json.loads(self._data_json.read_text())
+        if not self.data['world']:
+            raise ValueError("Playthrough must have world set")
         self.frame_count = len(list(self.frames_path.glob("*.png")))
 
+    def freeze(self):
+        self.frozen = True
+        self.frozen_data = self.data
+        self.data = {
+            **self.frozen_data,
+            'item_names': [],
+            'item_frames': [],
+            'item_duplicates': [],
+        }
+
     def get_max_index(self):
-        return self.frame_count
+        return self.frame_count - 1
 
     def touch(self, item_name):
         if item_name and self._current != item_name:
             self.data['item_names'].append(item_name)
+            self.data['item_frames'].append(self._index)
             self.last = item_name
             self.save()
         self._current = item_name
 
     def save(self):
-        self._data_json.write_text(json.dumps(self.data))
+        if not self.frozen:
+            self._data_json.write_text(json.dumps(self.data))
 
     def mark_duplicate(self, _id=None):
-        _id = _id or len(self.data['item_names']) - 1
+        _id = _id or len(self.data['item_names'])
         if _id in self.data['item_duplicates']:
             self.data['item_duplicates'].remove(_id)
         else:
@@ -54,13 +69,15 @@ class Playthrough(WaitKeyMixin):
         self.save()
 
     def is_last_duplicate(self):
-        _id = len(self.data['item_names']) - 1
+        _id = len(self.data['item_names'])
         return _id in self.data['item_duplicates']
 
     def save_frame(self, image, frame_no=None):
+        if self.frozen:
+            raise ValueError("You cannot save a frame to a frozen playthrough")
         if frame_no is None:
-            self.frame_count += 1
             frame_no = self.frame_count
+            self.frame_count += 1
         cv2.imwrite(str(self.path / f'frames/{frame_no}.png'), image)
 
     def get_frame(self, frame_id):
@@ -118,3 +135,28 @@ class Playthrough(WaitKeyMixin):
             'duplicated': self.is_last_duplicate(),
             **extra
         }
+
+    def does_frozen_match_live(self):
+        live = self.data['item_names']
+        frozen = self.frozen_data['item_names']
+        for i, live_item in enumerate(live):
+            if i > len(frozen) - 1:
+                print(f"Frozen items stop after {i}")
+                return
+            if live_item != frozen[i]:
+                print(f'Item mismatch {live_item} != {frozen[i]} @{i}')
+                print('Items in live', live)
+                return
+        print(f'frozen and live match up to {len(live)}/{len(frozen)}')
+        return True
+
+    def sum_item_box(self, frame):
+        frame = urcv.transform.threshold(frame, value=10)
+        boundses = [
+            [114, 225, 32, 28],
+            [431, 223, 32, 42],
+        ]
+        item_sum = 0
+        for x, y, w, h in boundses:
+            item_sum += np.sum(frame[y:y+h,x:x+w])
+        return item_sum

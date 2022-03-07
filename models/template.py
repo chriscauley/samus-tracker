@@ -6,13 +6,19 @@ import urcv
 def noop(a, *args, **kwargs):
     return a
 
+def _thresh_pause(image):
+    return urcv.transform.threshold(image, 244)
+
 class Template:
     def __init__(self, world, processes={}):
         self.dirs = { 'root': Path('.cache/templates/'+world) }
         self.scale_ratio = 1
         self._raw = {}
         self._template = {}
-        self.processes = processes
+        self.processes = {
+            'ui': { 'pause': _thresh_pause },
+            **processes,
+        }
         for category in ['item', 'zone', 'ui']:
             self.dirs[category] = self.dirs['root'] / category
             self.dirs[category].mkdir(exist_ok=True, parents=True)
@@ -34,13 +40,13 @@ class Template:
         cv2.imwrite(str(path), image)
         self._reload(category, name)
 
-    def search(self, image, category, names=[], show=False):
+    def search(self, image, category, names=[], show=False, threshold=0.9):
         names = names or self._raw[category].keys()
         for name in names:
             func = self.processes.get(category, {}).get(name) or noop
             target = func(image)
             template = self._template[category][name]
-            coords = urcv.template.match(target, template, threshold=0.9)
+            coords = urcv.template.match(target, template, threshold=threshold)
             if show:
                 cv2.imshow(name, template)
                 cv2.imshow(name +" target", target)

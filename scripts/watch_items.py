@@ -30,11 +30,11 @@ options = {
 }
 frame_times = [time.time()]
 
-_template = 'super-metroid'
+world = 'super-metroid'
 for i, arg in enumerate(sys.argv):
     if arg == '-t':
-        _template = sys.argv[i+1]
-print('using template', _template)
+        world = sys.argv[i+1]
+print('using template', world)
 
 def render_dict(data):
     img = np.zeros((400, 500), dtype=np.uint8)
@@ -43,9 +43,6 @@ def render_dict(data):
         _w, h = urcv.text.write(img, f'{key}: {value}', pos=(0, y))
         y += h + 5
     return img
-
-def _thresh_pause(image):
-    return urcv.transform.threshold(image, 244)
 
 def detect_stopped(capture, gray_mini):
     bar = cv2.cvtColor(capture[0:GAME_TOP], cv2.COLOR_BGR2GRAY)
@@ -64,8 +61,8 @@ def detect_stopped(capture, gray_mini):
 with mss() as sct:
     stats = { 'frame': 0 }
     scale = 0.5
-    template = Template(_template, {'ui': { 'pause': _thresh_pause }})
-    playthrough = Playthrough(sys.argv[1])
+    template = Template(world)
+    playthrough = Playthrough(sys.argv[1], world=world)
     capture_rate = int(1000 / playthrough.data['fps'])
     print('starting in 1 sec; delay=', capture_rate)
     time.sleep(1) # a little delay for switching windows
@@ -82,7 +79,7 @@ with mss() as sct:
         return template.search(gray_mini, 'item')
 
     def search_zone(template, gray_mini):
-        cropped = doot
+        cropped = doot # name error!
         return template.search(cropped, 'zone')
     while True:
         now = time.time()
