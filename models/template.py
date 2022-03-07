@@ -11,7 +11,7 @@ def _thresh_pause(image):
 
 class Template:
     def __init__(self, world, processes={}):
-        self.dirs = { 'root': Path('.cache/templates/'+world) }
+        self.dirs = { 'root': Path('templates/'+world) }
         self.scale_ratio = 1
         self._raw = {}
         self._template = {}

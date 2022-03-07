@@ -10,6 +10,7 @@ class WaitKeyMixin:
         self.goto = None
         self._last_tick = time.time()
 
+    # TODO make this getter/setter property on goto
     def increase_goto_by(self, amount):
         self.goto_sign = np.sign(amount)
         self.goto = self._index + amount

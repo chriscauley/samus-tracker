@@ -10,10 +10,15 @@ from unrest.utils import time_it
 
 sums_hit = []
 sums_miss = []
-
+stop_at = None
+if '--stop-at' in sys.argv:
+    stop_at = int(sys.argv[sys.argv.index('--stop-at') + 1])
+print(stop_at)
 
 playthrough = Playthrough(sys.argv[1])
 playthrough.freeze()
+if stop_at:
+    playthrough.increase_goto_by(stop_at)
 template = Template(playthrough.data['world'])
 trex = MotionDetector()
 
@@ -35,6 +40,8 @@ def search(gray_mini):
 all_items = np.zeros((0))
 
 while True:
+    if stop_at and playthrough._index == stop_at:
+        break
     frame = playthrough.get_frame(playthrough._index)
     copy = frame.copy()
     gray_mini = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

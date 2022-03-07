@@ -94,7 +94,7 @@ class Video():
     def get_item_template(self, frame_number):
         item_name = self.data['names_by_frame'][str(frame_number)]
         key = f'{self.external_id}__{frame_number}__{item_name}'
-        path = f'.cache/templates/{key}.png'
+        path = f'templates/{key}.png'
         if not str(frame_number) in self.data['coords_by_frame']:
             item_content = self.get_item_content(frame_number)
             bounds = urcv.input.get_scaled_roi(item_content, 3)

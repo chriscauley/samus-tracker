@@ -4,7 +4,7 @@ from pathlib import Path
 
 import urcv
 
-DIR = Path('.cache/templates')
+DIR = Path('templates')
 DIR.mkdir(exist_ok=True)
 
 _templates = {}
