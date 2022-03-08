@@ -1,15 +1,12 @@
 import setup
 import cv2
 from models import Playthrough, Template, MotionDetector
-import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
 import urcv
 from unrest.utils import time_it
 
-sums_hit = []
-sums_miss = []
 stop_at = None
 playthrough = Playthrough(sys.argv[1])
 if '--stop-at' in sys.argv:
@@ -64,7 +61,6 @@ while True:
             all_items = cv2.add(all_items, frame)
         cv2.imshow('all_items', cv2.multiply(all_items, (100, 100, 100, 1)))
         urcv.text.write(copy, item)
-        sums_hit.append(item_sum)
         if item_sum:
             bounds = 431, 223, 32, 42
     elif item_sum < 1e2:
@@ -85,14 +81,6 @@ while True:
         cropped = urcv.transform.crop(copy, (x, y, w, h))
         cv2.imshow('cropped', cropped)
         print('bounds is', (x, y, w, h))
-    elif pressed == 'p':
-        fig, (ax1, ax2) = plt.subplots(2)
-        fig.suptitle('Horizontally stacked subplots')
-
-        ax1.hist(sums_hit, range=(0, 1e2))
-        ax2.hist(sums_miss, range=(0, 1e2))
-        fig.show()
-        input('review plot and press enter')
     elif pressed == 's':
         print('unfreezing and saving', end=" ")
         playthrough.frozen = False
