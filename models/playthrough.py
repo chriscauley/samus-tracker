@@ -82,7 +82,9 @@ class Playthrough(WaitKeyMixin):
             self.frame_count += 1
         cv2.imwrite(str(self.path / f'frames/{frame_no}.png'), image)
 
-    def get_frame(self, frame_id):
+    def get_frame(self, frame_id=None):
+        if frame_id == None:
+            frame_id = self._index
         return cv2.imread(f'{self.frames_path}/{frame_id}.png')
 
     def list_items(self, names=None):
