@@ -63,8 +63,8 @@ while True:
         urcv.text.write(copy, item)
         if item_sum:
             bounds = 431, 223, 32, 42
-    elif item_sum < 1e2:
-        sums_miss.append(item_sum)
+    # elif item_sum < 1e2:
+    #     sums_miss.append(item_sum)
     if not playthrough.goto:
         inventory = playthrough.get_inventory_image()
         cv2.imshow('inventory', inventory)
@@ -83,7 +83,7 @@ while True:
         print('bounds is', (x, y, w, h))
     elif pressed == 's':
         print('unfreezing and saving', end=" ")
-        playthrough.frozen = False
+        playthrough._frozen = False
         playthrough.save()
         print('...done')
         exit()

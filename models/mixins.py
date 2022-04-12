@@ -24,8 +24,8 @@ class WaitKeyMixin:
     def wait_key(self):
         if self.goto is not None:
             delta = self.goto - self._index
-            if abs(delta) > 10 and self._index % 100 == 0:
-                print('goto... ', self._index, int(1000*(time.time()-self._last_tick)))
+            if abs(delta) > 10 and self._index % 100 == 99:
+                print('goto... ', self._index + 1, int(1000*(time.time()-self._last_tick)))
                 self._last_tick = time.time()
             self._index += self.goto_sign
             if self.goto == self._index:

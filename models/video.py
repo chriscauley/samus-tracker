@@ -11,17 +11,25 @@ class Video(WaitKeyMixin):
         self._frame_index = self._index - 1
         self.get_frame()
 
-    def get_frame(self):
-        while self._index != self._frame_index:
+    def get_frame(self, frame_id=None):
+        if frame_id == None:
+            frame_id = self._index
+        if frame_id == 0:
+            # opencv is 1 indexed, so we'll just return the first frame
+            frame_id = 1
+        if self._frame_index != frame_id:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
+            self._frame_index = frame_id
             ret, self._frame_image = self.cap.read()
             if not ret:
                 raise NotImplementedError("Video is not loaded")
-            self._frame_index += 1
-        self.is_opened = self.cap.isOpened()
         return self._frame_image
 
+    def get_current_time(self):
+        return self.cap.get(cv2.CAP_PROP_POS_MSEC)
+
     def get_max_index(self):
-        return 1e12
+        return self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
     def increase_goto_by(self, amount):
         if amount < 0:
