@@ -17,6 +17,10 @@ class WaitKeyMixin:
         self.goto = self.goto % self.get_max_index()
         print(f'going to {self.goto} (delta={amount})')
 
+    @property
+    def busy(self):
+        return self.goto != None
+
     def wait_key(self):
         if self.goto is not None:
             delta = self.goto - self._index

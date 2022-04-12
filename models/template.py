@@ -46,7 +46,7 @@ class Template:
             func = self.processes.get(category, {}).get(name) or noop
             target = func(image)
             template = self._template[category][name]
-            coords = urcv.template.match(target, template, threshold=threshold)
+            coords = list(urcv.template.match(target, template, threshold=threshold))
             if show:
                 cv2.imshow(name, template)
                 cv2.imshow(name +" target", target)
