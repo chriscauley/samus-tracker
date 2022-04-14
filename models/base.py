@@ -1,12 +1,25 @@
 from collections import defaultdict
 import cv2
 import json
-from .mixins import WaitKeyMixin
 import numpy as np
 from pathlib import Path
 import urcv
 
 from maptroid.icons import get_icons
+
+from .mixins import WaitKeyMixin
+from .template import Template
+
+ITEM_HOLE_BOUNDS = [
+    [114, 225, 32, 28],
+    [431, 223, 32, 42],
+    [229, 251, 204, 14],
+]
+MOD_FRAMES = {
+    'ypx': 15,
+    'super_metroid': 2, # actually for varia
+}
+
 
 class BasePlaythrough(WaitKeyMixin):
     """ Defines the common API for Video and Playthrough models """
@@ -34,7 +47,8 @@ class BasePlaythrough(WaitKeyMixin):
             raise ValueError("Playthrough must have world set")
         self._current = self._last = None
         self._frozen = False
-
+        self.template = Template(self.data['world'])
+        self._item_hole_bounds = ITEM_HOLE_BOUNDS
 
     def freeze(self):
         self._frozen = True
@@ -139,3 +153,35 @@ class BasePlaythrough(WaitKeyMixin):
             'duplicated': self.is_last_duplicate(),
             **extra
         }
+
+    # TODO item detection functions could be on their own class
+    def sum_item_box(self, frame):
+        frame = urcv.transform.threshold(frame, value=10)
+        item_sum = 0
+        for x, y, w, h in self._item_hole_bounds:
+            item_sum += np.sum(frame[y:y+h,x:x+w])
+        return item_sum
+
+    # TODO item detection functions could be on their own class
+    def check_item(self):
+        world = self.data['world']
+
+        # We can ignore most frames since the item stays open for 1-7 seconds depending on the mod
+        if self._index % MOD_FRAMES[world] != 0:
+            return None, []
+
+        frame = self.get_frame()
+        gray_mini = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Check to see if the item box is open by testing several bounds for blackness
+        item_sum = self.sum_item_box(gray_mini)
+        if item_sum > 1e4:
+            return None, []
+
+        item, item_bounds = self.template.search(gray_mini, 'item')
+        self.touch(item)
+        return item, item_bounds
+
+    # TODO item detection functions could be on their own class
+    def get_game_time(self):
+        x, y, w, h = (92, 0, 152, 14)

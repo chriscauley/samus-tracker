@@ -9,6 +9,7 @@ class Playthrough(BasePlaythrough):
     """
     Playthroughs are a series of frames captured live via the mss package
     """
+
     def __init__(self, id, world=None):
         self.root_dir = '.cache/playthroughs'
         super().__init__(id, world)
@@ -43,15 +44,3 @@ class Playthrough(BasePlaythrough):
         if frame_id == None:
             frame_id = self._index
         return cv2.imread(f'{self.frames_path}/{frame_id}.png')
-
-    def sum_item_box(self, frame):
-        frame = urcv.transform.threshold(frame, value=10)
-        boundses = [
-            [114, 225, 32, 28],
-            [431, 223, 32, 42],
-            [189, 251, 244, 14],
-        ]
-        item_sum = 0
-        for x, y, w, h in boundses:
-            item_sum += np.sum(frame[y:y+h,x:x+w])
-        return item_sum
