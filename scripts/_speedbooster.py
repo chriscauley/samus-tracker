@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 import sys
 import urcv
+from unrest.utils import time_it
 
 root_dir = Path(f'.cache/speedbooster/{sys.argv[1]}')
 frames_dir = root_dir / 'frames'
@@ -39,13 +40,10 @@ def compactify(image):
             current = image[:, i_col]
             cols.append(i_col)
             last = i_col
-    if len(cols) != 240:
-        print('warning: bad column size', len(cols))
     for i_col in range(w0)[::-1]:
         if not i_col in cols:
             image = np.delete(image, i_col, 1)
     return image
-
 
 def invert_match(back, front):
     bw = back.shape[1]
@@ -68,8 +66,6 @@ def invert_match(back, front):
 for i_frame in range(len(list(frames_dir.iterdir()))):
     frame = og = cv2.imread(f'{frames_dir}/{i_frame}.png')
     frame = compactify(og)
-    print(og.shape, frame.shape)
-    # gray = cv2.medianBlur(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), 3)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     if i_frame == 0:
@@ -80,28 +76,20 @@ for i_frame in range(len(list(frames_dir.iterdir()))):
         continue
 
     w, h = frame.shape[:2]
-    template = gray[:, 0:16]
+    template = gray[:, 0:64]
+    template[16:-32] = 0
     target = gray_canvas[:,dw:dw+128]
-    # matches = urcv.template.match(target, template)
+    target[16:-32] = 0
 
-    # if len(matches) == 0:
-    #     print('no matches!')
-    #     urcv.wait_key()
-    #     exit()
-
-    # dx, _, _, _ = matches[0]
-
-    # if not dx:
-    #     print('no delta for frame', i_frame)
-    #     continue
-
-
-    # print(len(matches), 'matches', f'dw={dw}, dx={dx}')
 
     dx = invert_match(target, template)
-    print(i_frame, dx)
     if not dx:
         continue
+
+    # abandoned attempt at matching using opencv's template matching
+    # matches = urcv.template.match(target, template)
+    # if len(matches):
+    #     print(dx, matches[0])
 
     # draw a white line to prevent back shifting
     canvas[:,dw] = 255
@@ -118,5 +106,4 @@ for i_frame in range(len(list(frames_dir.iterdir()))):
     cv2.imshow('canvas', np.vstack([canvas, og_canvas[-32:]]))
     cv2.imshow('frame', frame)
     pressed = urcv.wait_key()
-    if pressed == 'q':
-        break
+
