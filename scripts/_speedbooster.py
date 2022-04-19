@@ -130,10 +130,12 @@ if __name__ == '__main__':
                 cached[str(f)] = main(str(f).split('/')[-1])
             dxs = cached[str(f)]
             # plt.plot(dxs)
-            # i/20 here is because the lines are too close to differentiate
             data = moving_average(dxs, 4)
+            # normalize speed vs timer.py data (see notes.org)
+            data = [i * 10.23 / 2.753 for i in data]
+            # i/20 here is because the lines are too close to differentiate
             # data = [dx+i/20 for dx in data]
-            plt.plot(data)
+            plt.plot([i/60 for i in range(len(data))], data)
         plt.ylabel('dxs')
         plt.show()
     else:

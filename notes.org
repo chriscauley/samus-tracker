@@ -1,0 +1,61 @@
+* summary
+** speed booster
+   35.23 (timer.py tourian)
+   35.9 (timer.py left hand speed)
+   twice running (timer landing)
+   31.3 terminator uphill
+   35.26 terminator downhill
+   x velocity seems slightly (10%) slower uphill (seems about right in maptroid)
+* times
+** running - speed booster doubles speed
+   top speed w/o speed booster = 450ms (27*16.666ms frames of video)
+   top speed w/speed booster = 216ms (13*16.666ms frames of video)
+* timer.py
+** tourian
+  8 blocks = pole to pole
+  running.mkv => 450ms or 17.66 blocks per second
+  walking.mkv => 782ms or 10.23 blocks per second
+  speedbooster is double running (from _speedbooster.py)
+  running is 1.73x walking
+** landing
+   measured from start of right edge of ship to left door
+   running 4392ms
+   walking 7857ms
+   speedbooster 2192ms
+   conclusion: speedbooster is 2x running
+   running is 1.78x faster than
+** landing  left speed
+   3843 to get from first rightside downslop to left door
+   left door is 2 block thick
+   right slope is 4 block from edge (varified in maptroid)
+   room is 9*16=144 blocks
+   138/3843ms 35.9 blocks per second
+** terminator
+   17 blocks between mushrooms
+   speedbooster 543 per mushroom or 31.3 bps
+   running 1109 per mushroom or 15.3 bps
+   downhill speed 482 per musrhoom or 35.26 bps
+* speedbooster.py
+  numbers were recorded in frames, but reported in s (using 60 fps)
+  speed is b/s (blocks per second)
+  acceleration is b/s/s (blocks per second per second)
+** walking
+   samus gets to top speed in 0.19s w/constant acceleration
+   0-10b/s means 53.6b/s/s
+** running + speed booster
+   samus gets to 13b/s in 0.19s w/constant acceleration
+   acceleration is 68.4 b/s/s
+   acceleration slows but then is constant until top speed
+   using speedbooster curves it's x0=0.2 y0=13 x1=1.8 y1=36
+   acceleration is (36-13)/(1.8-0.2) or 14.5b/s/s
+** 3 odd curves (shortspark)
+   one curve (slowest of all) is shortspark without holding run at end
+   slowest curve has a constant speed slower than normal run
+   two curves are shortspark with holding run at end
+   amazingly, speed never stablizes
+* record.py
+  running at full speed (no booster), samus moves between columns in 27 frames
+  columns are 8 blocks
+  samus runs at 17.66 blocks per second
+  27 / 8 * 17.66 = 59 frames per second
+  We'll assume 60 (internet says snes should be 60)

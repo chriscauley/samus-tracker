@@ -30,7 +30,7 @@ options = {
 
 last = 0
 i = 0
-i_max = 160
+i_max = 250
 with mss() as sct:
     last = None
     while True:
