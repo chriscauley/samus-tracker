@@ -16,8 +16,8 @@ ITEM_HOLE_BOUNDS = [
     [229, 251, 204, 14],
 ]
 MOD_FRAMES = {
-    'ypx': 15,
-    'super_metroid': 2, # actually for varia
+    'ypx': 1,
+    'super_metroid': 1, # actually for varia
 }
 
 
