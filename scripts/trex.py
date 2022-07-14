@@ -3,23 +3,30 @@ from models import Video
 import cv2
 import io
 import matplotlib.pyplot as plt
+from misc import NumpyEncoder
 import numpy as np
 import sys
 import urcv
+
+from unrest.utils import JsonCache
 
 cap = cv2.VideoCapture(sys.argv[1])
 
 if not cap.isOpened():
     print("Error opening video stream or file")
 
+if '-f' in sys.argv:
+    cap.set(1, int(sys.argv[sys.argv.index('-f')+1]))
 last_game = None
 last_hud = None
 last_map = None
 in_door = False
 last_door = None
 
-trex1 = [0,0,0,0,0]
-trex2 = [0,0,0,0,0]
+trex1 = [0, 0, 0, 0, 0]
+trex2 = [0, 0, 0, 0, 0]
+frames = []
+sums = []
 
 ITEM_THRESH = 0.001
 DOOR_THRESH = 0.1
@@ -37,60 +44,77 @@ def plot3():
     return data.reshape((int(h), int(w), -1))
 
 def clamp(num, min_value, max_value):
-        return max(min(num, max_value), min_value)
+    return max(min(num, max_value), min_value)
 
-def moving_average(x, w):
+def moving_average(x, w=10):
+    return x
     return np.convolve(x, np.ones(w), 'valid') / w
 
-while(cap.isOpened()):
+data = JsonCache(f'.data/{sys.argv[1].split("/")[-1]}.json', __encoder__=NumpyEncoder)
+
+data['sums'] = []
+data['deltas'] = [0]
+
+DISPLAY_RATE = 1e9
+
+def sumcells(img, size=16):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.dilate(img, np.ones((5, 5), np.uint8))
+
+    H = int(img.shape[0] / size)
+    W = int(img.shape[1] / size)
+
+    return cv2.resize(img,(W,H)) > 5
+
+max_frame = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+og = True
+
+while cap.isOpened():
     ret, og = cap.read()
-    frame_no = cap.get(cv2.CAP_PROP_POS_FRAMES)
+    if og is None:
+        break
+    frame_no = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
     hud = og[:HUD_SPLIT]
     game = og[HUD_SPLIT:]
 
-    if frame_no %2 == 1:
-        continue
-    # game = cv2.blur(game, (7,7))
     frame = game.copy()
+
+    sum_ = sumcells(game)
+    data['sums'].append(np.sum(sum_))
 
     if last_game is None:
         last_game = game
         continue
-    # diff1 = cv2.subtract(frame, last_game)
-    # cv2.imshow('diff1', diff1)
-    # diff1 = np.sum(diff1)
-    # diff2 = np.sum(cv2.subtract(last_game, frame))
-    # urcv.text.write(frame, diff1, pos=(0, frame.shape[0]), align="bottom")
-    # urcv.text.write(frame, diff2, pos=(200, frame.shape[0]), align="bottom")
-    # trex1.append(clamp(diff1 / np.sum(frame), 0, 2))
-    # trex2.append(clamp(diff2 / np.sum(frame), 0, 2))
-    value = (int(np.sum(frame)) - int(np.sum(last_game))) / int(np.sum(frame) or 1e24)
-    trex1.append(clamp(value, -1, 1))
-    urcv.text.write(frame, round(value,2), pos=(0, frame.shape[0]), align="bottom")
-    urcv.text.write(frame, frame_no)
 
-    if in_door:
-        door_text = 'in_door'
-        if all([i > DOOR_THRESH for i in trex1[-5:]]):
-            in_door = False
-            last_door = frame_no
-    else:
-        door_text = f'last: {last_door}'
-        if all([i < -DOOR_THRESH for i in trex1[-5:]]):
-            in_door = True
 
-    h, w = game.shape[:2]
-    urcv.text.write(frame, door_text, pos=(w,h), align='bottom right')
+    delta = cv2.add(
+        cv2.subtract(game, last_game),
+        cv2.subtract(last_game, game)
+    )
 
-    cv2.imshow('frame', urcv.transform.scale(frame, 4))
-    if frame_no % 60 == 0 or True:
-        trex1 = trex1[-120:]
-        trex2 = trex2[-120:]
-        plt.plot(trex1, label="trex1")
-        plt.ylim([-0.003, 0.003])
-        # plt.plot(moving_average(trex2, 5), label="trex2")
+    sum_delta = sumcells(delta)
+    data['deltas'].append(np.sum(sum_delta))
+
+    if frame_no % DISPLAY_RATE == 0:
+        urcv.text.write(frame, frame_no, pos="bottom")
+        percent = round(100 * frame_no / max_frame, 2)
+        urcv.text.write(frame, f'{percent}%', pos="bottom right")
+        cv2.imshow('frame,delta', np.vstack([frame, delta]))
+
+        sum_delta = np.multiply(255, sum_delta.astype(np.uint8))
+        sum_ = np.multiply(255, sum_.astype(np.uint8))
+        cv2.imshow('sum,delta', urcv.transform.scale(np.vstack([sum_,sum_delta]), 16))
+
+
+
+        plt.plot(moving_average(data['sums'][-1000:]), label="sums")
+        plt.plot(moving_average(data['deltas'][-1000:]), label="deltas")
         cv2.imshow('plot', plot3())
         plt.clf()
+        pressed = urcv.wait_key()
+        if pressed == 'q':
+            break
 
-    urcv.wait_key()
     last_game = game
+
+data._save()
