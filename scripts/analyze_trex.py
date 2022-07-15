@@ -6,7 +6,8 @@ import numpy as np
 import sys
 import urcv
 from unrest.utils import JsonCache
-from misc import NumpyEncoder
+
+from misc import NumpyEncoder, moving_average
 
 cap = cv2.VideoCapture(sys.argv[1])
 

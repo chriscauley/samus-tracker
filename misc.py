@@ -31,3 +31,6 @@ class NumpyEncoder(json.JSONEncoder):
         if isinstance(obj, np.integer):
             return int(obj)
         return json.JSONEncoder.default(self, obj)
+
+def moving_average(x, w=10):
+    return np.convolve(x, np.ones(w), 'valid') / w

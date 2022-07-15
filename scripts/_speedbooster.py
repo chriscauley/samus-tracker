@@ -1,16 +1,14 @@
 import setup
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 import sys
 import urcv
 from unrest.utils import time_it, JsonCache
 
-import matplotlib.pyplot as plt
-
-def moving_average(x, w):
-    return np.convolve(x, np.ones(w), 'valid') / w
+from misc import moving_average
 
 def compactify(image):
     image = image[::4, ::4] # down pixel

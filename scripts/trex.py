@@ -3,12 +3,12 @@ from models import Video
 import cv2
 import io
 import matplotlib.pyplot as plt
-from misc import NumpyEncoder
 import numpy as np
 import sys
+from unrest.utils import JsonCache
 import urcv
 
-from unrest.utils import JsonCache
+from misc import NumpyEncoder
 
 cap = cv2.VideoCapture(sys.argv[1])
 
