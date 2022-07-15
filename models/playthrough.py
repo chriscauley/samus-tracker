@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from pathlib import Path
 import urcv
 
 from .base import BasePlaythrough
@@ -44,3 +45,14 @@ class Playthrough(BasePlaythrough):
         if frame_id == None:
             frame_id = self._index
         return cv2.imread(f'{self.frames_path}/{frame_id}.png')
+
+    @staticmethod
+    def load_all(world):
+        playthroughs = []
+        for path in Path('.cache/playthroughs').iterdir():
+            if not (path / 'data.json').exists():
+                continue
+            playthrough = Playthrough(str(path).split('/')[-1])
+            if playthrough.data['world'] == world:
+                playthroughs.append(playthrough)
+        return sorted(playthroughs, key=lambda p: p.data['world'])
