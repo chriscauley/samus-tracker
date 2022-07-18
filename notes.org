@@ -35,6 +35,14 @@
    speedbooster 543 per mushroom or 31.3 bps
    running 1109 per mushroom or 15.3 bps
    downhill speed 482 per musrhoom or 35.26 bps
+** bullet
+   bullet.mkv 18.4 bps (433 ms to go 8 blocks)
+   bullet_run.mkv 34 bps (233 to go 8 blocks at full run)
+   conclusion: just add player velocity
+   going to keep bullet alive for 1 screen @ base speed, so 16/18 or 0.888 seconds
+** shinespark
+   160ms per 8 blocks
+   50 bps
 * speedbooster.py
   numbers were recorded in frames, but reported in s (using 60 fps)
   speed is b/s (blocks per second)
